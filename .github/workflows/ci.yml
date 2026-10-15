@@ -1,0 +1,24 @@
+name: CI/CD
+on:
+  push:
+    branches: [main]
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/civisense:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/civisense:${{ github.sha }}
+      - name: Notify Slack
+        if: success()
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"CivicSense pipeline succeeded: image ${GITHUB_SHA::7} pushed to Docker Hub\"}" "${{ secrets.SLACK_WEBHOOK_URL }}"
