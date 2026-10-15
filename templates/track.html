@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% block body %}
+<div class="row"><div><h1>Track Complaint Status</h1><p class="sub">Stay updated with real-time progress of your reported issue</p></div><a class="btn" href="/complaints" style="margin:0">All complaints</a></div>
+<div class="card hd"><div><small>{{i.ticket}}</small> <span class="pill in_progress">{{i.category}}</span> <span class="pill open">{{i.priority|capitalize}} Priority</span>
+ <h2 style="margin:10px 0 4px">{{i.title}}</h2><small>{{i.location}} · {{i.date}}</small></div>
+ <div><small>CURRENT STATUS</small><h3 class="{{i.status}}" style="background:none;border:0;margin-top:6px">{{i.status|replace('_',' ')|title}}</h3></div>
+ <div class="ring" style="background:conic-gradient(var(--blue) {{i.progress}}%,var(--line) 0)"><span>{{i.progress}}%</span></div>
+ <div><small>EXPECTED RESOLUTION</small><h3 style="margin-top:6px">{{i.eta}}</h3><small>{{i.days_left}} days remaining</small></div></div>
+<div class="g4" style="grid-template-columns:repeat(3,1fr);margin-top:18px">
+ <div class="card"><small>SIMILAR COMPLAINTS NEARBY</small><h2 style="color:var(--blue)">{{similar}}</h2></div>
+ <div class="card"><small>AVG. RESOLUTION TIME</small><h2 style="color:var(--grn)">3.2 days</h2></div>
+ <div class="card"><small>ASSIGNED DEPARTMENT</small><h2 style="color:#c084fc;font-size:22px;margin-top:6px">{{i.department}}</h2></div></div>
+<div class="card"><h3>Complaint Progress Timeline</h3><ul class="tl">
+{% for th,label in [(0,'Complaint reported'),(30,'Assigned to '+i.department),(60,'Work in progress'),(100,'Issue resolved')] %}<li class="{{ 'done' if i.progress>=th }}">{{label}}</li>{% endfor %}</ul></div>{% endblock %}

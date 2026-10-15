@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% block body %}
+<h1>Dashboard</h1><p class="sub">Live overview of civic issues across Hyderabad.</p>
+<div class="g4">
+ <div class="card stat"><div class="ico"><i data-lucide="flag"></i></div><b>{{s.total}}</b>Total Complaints<br><small>+{{s.new_week}} this week</small></div>
+ <div class="card stat"><div class="ico"><i data-lucide="check-circle"></i></div><b>{{s.resolved}}</b>Resolved<br><small>Closed by departments</small></div>
+ <div class="card stat"><div class="ico"><i data-lucide="clock"></i></div><b>{{s.progress}}</b>In Progress<br><small>Active</small></div>
+ <div class="card stat"><div class="ico"><i data-lucide="bar-chart-2"></i></div><b>{{s.score}}</b>Civic Score<br><small>Top 15%</small></div>
+</div>
+<div class="g2">
+ <div class="card"><div class="row"><h3>Complaints by Category</h3><div><button class="seg on" onclick="rng(7,this)">7d</button> <button class="seg" onclick="rng(30,this)">30d</button> <button class="seg" onclick="rng(90,this)">90d</button></div></div><div class="chart"><canvas id="bc"></canvas></div></div>
+ <div class="card"><h3>Complaint Status</h3><div class="chart"><canvas id="dc"></canvas></div></div>
+</div>{% endblock %}
+{% block js %}<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script><script>
+const C=['#0a84ff','#10b981','#06b6d4','#f59e0b','#ef4444','#8b5cf6','#64748b'];let bar,dn;
+async function load(d){const j=await (await fetch('/api/stats?days='+d)).json();
+ bar&&bar.destroy();bar=new Chart('bc',{type:'bar',data:{labels:Object.keys(j.categories),datasets:[{data:Object.values(j.categories),backgroundColor:C,borderRadius:8}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8da0bd'},grid:{display:false}},y:{ticks:{color:'#8da0bd',stepSize:1},grid:{color:'#1c2a44'}}}}});
+ const S=j.status;dn&&dn.destroy();dn=new Chart('dc',{type:'doughnut',data:{labels:['Resolved','In Progress','Open'],datasets:[{data:[S.resolved||0,S.in_progress||0,S.open||0],backgroundColor:['#10b981','#f59e0b','#ef4444'],borderColor:'#0e1729',borderWidth:3}]},options:{maintainAspectRatio:false,cutout:'68%',plugins:{legend:{position:'bottom',labels:{color:'#8da0bd'}}}}});}
+function rng(d,b){document.querySelectorAll('.seg').forEach(x=>x.classList.remove('on'));b.classList.add('on');load(d)}
+load(7);</script>{% endblock %}

@@ -1,0 +1,13 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CivicSense AI</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head><body>
+<aside class="side">
+ <div class="brand"><div class="logo"><i data-lucide="sparkles"></i></div><div><b>CivicSense AI</b><small>Smart Governance</small></div></div>
+ <nav>{% for ep,label,icon in [('dashboard','Dashboard','home'),('report','Report an Issue','flag'),('track','Track Status','bar-chart-2'),('complaints','My Complaints','clipboard-list'),('nearby','Nearby Issues','map')] %}
+ <a href="{{ url_for(ep) }}" class="{{ 'active' if request.endpoint==ep }}"><i data-lucide="{{icon}}"></i>{{label}}</a>{% endfor %}</nav>
+ <div class="card user"><div class="av">n</div><div><b>nabeel</b><br><small>Citizen</small></div></div>
+</aside>
+<div class="wrap"><header class="top"><div class="chip"><i data-lucide="globe"></i>English</div><i data-lucide="bell"></i>
+<div class="user" style="padding:0"><div style="text-align:right"><b>nabeel</b><br><small>Citizen</small></div><div class="av">N</div></div></header>
+<main>{% block body %}{% endblock %}</main></div>
+<script src="https://unpkg.com/lucide@0.453.0/dist/umd/lucide.min.js"></script>
+{% block js %}{% endblock %}<script>lucide.createIcons()</script></body></html>

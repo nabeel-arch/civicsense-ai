@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% block body %}
+<h1>{{heading}}</h1><p class="sub">{{rows|length}} issues</p>
+<div class="card"><table><tr><th>Ticket</th><th>Issue</th><th>Category</th><th>Status</th><th></th></tr>
+{% for r in rows %}<tr><td>{{r.ticket}}</td><td>{{r.title}}</td><td>{{r.category}}</td><td><span class="pill {{r.status}}">{{r.status|replace('_',' ')|title}}</span></td><td><a href="{{ url_for('track', iid=r.id) }}" style="color:var(--blue)">Track</a></td></tr>{% endfor %}</table></div>{% endblock %}

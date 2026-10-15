@@ -1,0 +1,16 @@
+{% extends "base.html" %}{% block body %}
+<div class="row"><div><h1>Report an Issue</h1><p class="sub">Help Hyderabad improve by reporting civic issues. AI-powered analysis will auto-categorize and assign your complaint.</p></div><div class="chip"><i data-lucide="sparkles"></i>AI Analysis Enabled</div></div>
+<div class="g2"><div class="card"><h3>1. Select Issue Category</h3><small>Choose the type of civic issue you're reporting</small>
+ <div class="tiles">{% for c in cats %}<div class="tile" data-c="{{c}}">{{c}}</div>{% endfor %}</div>
+ <h3 style="margin-top:26px">2. Describe the issue</h3>
+ <input id="t" placeholder="Title (e.g. Deep pothole near bus stop)"><textarea id="d" rows="3" placeholder="Describe what you see"></textarea><input id="l" placeholder="Location (e.g. MG Road, Sector 22)">
+ <button class="btn" onclick="send()">Submit complaint</button><p id="e" class="warn"></p></div>
+ <div><div class="card"><h3>Location Preview</h3><div class="map"><div class="chip"><i data-lucide="map-pin"></i>Hyderabad, Telangana</div></div></div>
+ <div class="card" id="res" style="margin-top:18px;display:none"></div></div></div>{% endblock %}
+{% block js %}<script>
+let cat='';const $=i=>document.getElementById(i);
+document.querySelectorAll('.tile').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tile').forEach(x=>x.classList.remove('sel'));t.classList.add('sel');cat=t.dataset.c});
+async function send(){const r=await fetch('/api/issues',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:$('t').value,description:$('d').value,location:$('l').value,category:cat})});
+ const j=await r.json();$('e').textContent=r.ok?'':j.error;if(!r.ok)return;
+ $('res').style.display='block';$('res').innerHTML=`<h3>AI Analysis</h3><p style="margin-top:10px">Ticket <b>${j.ticket}</b></p><p>Category: <b>${j.category}</b></p><p>Priority: <b>${j.priority}</b></p><p>Assigned to: <b>${j.department}</b></p><a class="btn" href="/track/${j.id}">Track status</a>`}
+</script>{% endblock %}
