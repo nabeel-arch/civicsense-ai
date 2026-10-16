@@ -1,4 +1,5 @@
-import sqlite3, time, datetime as dt
+import os, time, datetime as dt
+import psycopg2, psycopg2.extras
 from flask import Flask, request, jsonify, render_template, abort
 from prometheus_flask_exporter import PrometheusMetrics
 
@@ -33,22 +34,46 @@ def analyse(text, chosen):
     else: pri = "low"
     return cat, pri, DEPT.get(cat, "General Administration")
 
+class Con:
+    def __init__(self):
+        for _ in range(30):
+            try:
+                self.c = psycopg2.connect(host=os.getenv("DB_HOST", "postgres"), dbname=os.getenv("DB_NAME", "civicsense"),
+                                          user=os.getenv("DB_USER", "civic"), password=os.getenv("DB_PASSWORD", ""))
+                return
+            except psycopg2.OperationalError:
+                time.sleep(2)
+        raise RuntimeError("database not reachable")
+    def execute(self, sql, args=()):
+        cur = self.c.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute(sql.replace("?", "%s"), args)
+        return cur
+    def commit(self):
+        self.c.commit()
+    def __del__(self):
+        try: self.c.close()
+        except Exception: pass
+
 def db():
-    con = sqlite3.connect(DB)
-    con.row_factory = sqlite3.Row
+    return Con()
+
+def init_db():
+    con = Con()
+    con.execute("SELECT pg_advisory_xact_lock(42)")
     con.execute("""CREATE TABLE IF NOT EXISTS issues(
-        id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, description TEXT, location TEXT,
+        id SERIAL PRIMARY KEY, title TEXT, description TEXT, location TEXT,
         category TEXT, priority TEXT, department TEXT, status TEXT DEFAULT 'open',
-        progress INTEGER DEFAULT 0, created REAL)""")
+        progress INTEGER DEFAULT 0, created DOUBLE PRECISION)""")
     if con.execute("SELECT COUNT(*) FROM issues").fetchone()[0] == 0:
         cats = ["Pothole"]*4 + ["Garbage Overflow"]*3 + ["Water Leakage"]*2 + ["Broken Streetlight"]*2 + ["Traffic Issue"]
         sts = ["in_progress"]*3 + ["open"] + ["resolved"]*8
-        for i, (c, s) in enumerate(zip(cats, sts)):
+        for i, (c, st) in enumerate(zip(cats, sts)):
             con.execute("INSERT INTO issues(title,description,location,category,priority,department,status,progress,created) VALUES(?,?,?,?,?,?,?,?,?)",
                         (f"{c} - {LOCS[i]}", "Reported by citizen", LOCS[i] + ", Hyderabad", c, "medium",
-                         DEPT[c], s, PROG[s], time.time() - (i % 6)*86400 - i*3600))
-        con.commit()
-    return con
+                         DEPT[c], st, PROG[st], time.time() - (i % 6)*86400 - i*3600))
+    con.commit()
+
+init_db()
 
 def fmt(r):
     d = dict(r)
@@ -108,10 +133,10 @@ def create_issue():
         return jsonify(error="Enter a title for the issue."), 400
     cat, pri, dept = analyse(title + " " + (d.get("description") or ""), d.get("category"))
     con = db()
-    cur = con.execute("INSERT INTO issues(title,description,location,category,priority,department,created) VALUES(?,?,?,?,?,?,?)",
+    cur = con.execute("INSERT INTO issues(title,description,location,category,priority,department,created) VALUES(?,?,?,?,?,?,?) RETURNING id",
                       (title, d.get("description"), d.get("location") or "Hyderabad", cat, pri, dept, time.time()))
     con.commit()
-    r = fmt(con.execute("SELECT * FROM issues WHERE id=?", (cur.lastrowid,)).fetchone())
+    r = fmt(con.execute("SELECT * FROM issues WHERE id=?", (cur.fetchone()[0],)).fetchone())
     return jsonify(id=r["id"], ticket=r["ticket"], category=cat, priority=pri, department=dept), 201
 
 @app.route("/api/issues/<int:iid>/status", methods=["POST"])
