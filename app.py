@@ -50,9 +50,6 @@ class Con:
         return cur
     def commit(self):
         self.c.commit()
-    def __del__(self):
-        try: self.c.close()
-        except Exception: pass
 
 def db():
     return Con()
