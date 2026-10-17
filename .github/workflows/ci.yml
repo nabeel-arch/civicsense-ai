@@ -18,7 +18,17 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/civisense:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/civisense:${{ github.sha }}
+  deploy:
+    needs: build-push
+    runs-on: self-hosted
+    env:
+      KUBECONFIG: /home/ubuntu/.kube/config
+    steps:
+      - name: Deploy to k3s
+        run: |
+          kubectl -n civicsense set image deployment/civicsense civicsense=${{ secrets.DOCKERHUB_USERNAME }}/civisense:${{ github.sha }}
+          kubectl -n civicsense rollout status deployment/civicsense --timeout=180s
       - name: Notify Slack
         if: success()
         run: |
-          curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"CivicSense pipeline succeeded: image ${GITHUB_SHA::7} pushed to Docker Hub\"}" "${{ secrets.SLACK_WEBHOOK_URL }}"
+          curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"CivicSense deployed: image ${GITHUB_SHA::7} built, pushed to Docker Hub and rolled out on k3s\"}" "${{ secrets.SLACK_WEBHOOK_URL }}"
